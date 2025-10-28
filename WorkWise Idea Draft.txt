@@ -1,0 +1,128 @@
+WorkWise AI — Technical Concept and Project Brief
+
+1. Overview
+WorkWise AI is a scalable artificial intelligence system designed to assist individuals
+affected by automation and shifting labor markets. The platform analyzes a person’s
+existing skills, identifies transferable competencies, predicts automation risk for their
+profession, and recommends actionable reskilling pathways. The objective is to reduce
+structural unemployment by connecting displaced workers to emerging job
+opportunities through intelligent AI-driven guidance.
+
+2. Problem Statement
+Automation is transforming industries at an unprecedented pace. Millions of jobs are
+being augmented or replaced by intelligent systems, leaving many workers uncertain
+about future employment. Traditional job portals list vacancies but fail to provide
+individualized transition guidance or skill mapping. There is a critical need for adaptive
+tools that can interpret human capability, understand evolving labor trends, and guide
+reskilling with precision and empathy.
+
+3. Proposed Solution
+WorkWise AI serves as a digital career advisor powered by advanced NVIDIA AI
+infrastructure. It operates as an orchestrated set of specialized agents working
+collaboratively to extract user skills, assess job-market compatibility, identify learning
+pathways, and forecast automation vulnerability. The system delivers a dynamic and
+personalized employment roadmap within a single platform.
+
+4. System Architecture
+The architecture combines NVIDIA's AI and inference technologies with modular
+service orchestration for scalability and speed.
+
+[ User Input ]
+       │
+       ▼
+[ Nemotron Model ]
+  • Natural Language Understanding
+  • Skill and Job Title Extraction
+       │
+       ▼
+[ MCP Orchestrator ]
+  ├── Skill Agent → Compares skills to job taxonomies (O*NET)
+  ├── Job Agent → Fetches job listings (LinkedIn/Indeed APIs)
+
+  ├── Learning Agent → Finds upskilling options (Coursera/edX APIs)
+  └── Risk Agent → Predicts automation exposure
+       │
+       ▼
+[ NIM Microservices Layer ]
+  • Provides inference serving for each model/agent
+       │
+       ▼
+[ Frontend Dashboard ]
+  • Displays personalized job matches, skill gaps, and learning roadmap
+
+5. Technical Stack
+• Nemotron: NVIDIA large language model for resume comprehension, skill reasoning,
+and contextual job analysis.
+• NIM (NVIDIA Inference Microservices): Enables rapid, containerized deployment of
+model endpoints for real-time inference.
+• MCP (Multi-Agent Collaboration Platform): Coordinates specialized AI agents and
+manages inter-agent communication.
+• Frontend: Implemented using Streamlit or React with Tailwind CSS for quick UI
+prototyping.
+• Backend: Python (FastAPI) serving endpoints for agents and data aggregation.
+• External Data Sources: O*NET occupational database, LinkedIn/Indeed job APIs,
+Coursera and edX course APIs.
+• Development Environment: NVIDIA AI Workbench for rapid container setup and
+integration testing.
+
+6. Workflow
+1. User uploads a resume or describes their current role.
+2. Nemotron model extracts relevant skills and professional history.
+3. MCP orchestrates AI agents for skill mapping, job retrieval, course recommendation,
+and automation-risk evaluation.
+4. NIM manages low-latency inference services for all model endpoints.
+5. The frontend visualizes insights through a personalized dashboard and interactive
+chat interface.
+6. The user receives a clear reskilling roadmap and direct links to actionable
+opportunities.
+
+7. Build Plan (Hackathon Implementation)
+
+Role
+
+Task
+
+Tools
+
+Backend Developer Configure NIM containers, set up FastAPI routes
+
+NVIDIA NIM, FastAPI
+
+ML Engineer
+
+Integrate Nemotron and agent pipelines
+
+NVIDIA Nemotron, MCP
+
+Frontend Developer
+
+Implement dashboard and chat interface
+
+React or Streamlit
+
+Integrator
+
+Coordinate data flow and agent communication
+
+MCP SDK, REST APIs
+
+Solo Developer Leverage prebuilt templates for a functional prototype NVIDIA AI Workbench
+
+8. Expected Impact
+• Provides an adaptive solution to structural unemployment through targeted
+reskilling.
+• Reduces friction between education and labor markets by connecting users to
+relevant opportunities.
+• Supports economic resilience by helping workers anticipate and adapt to automation
+trends.
+• Demonstrates ethical AI deployment through transparent, user-beneficial
+recommendations.
+
+9. Future Enhancements
+• Integration with local government and employment agencies for regional workforce
+planning.
+• Continuous learning personalization using user feedback loops.
+• Expansion into multilingual and cross-cultural workforce guidance.
+• Predictive analytics dashboard for policymakers tracking automation impact trends.
+
+

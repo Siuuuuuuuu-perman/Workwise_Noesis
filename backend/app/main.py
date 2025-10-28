@@ -1,0 +1,276 @@
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Optional
+import xml.etree.ElementTree as ET
+import json
+import uuid
+
+from .services.skills import extract_skills_from_text
+from .services.gaps import map_role_to_required_skills, detect_skill_gaps
+from .services.resources import rank_resources_for_skills
+from .services.roadmap import generate_learning_roadmap
+from .services.assessment import generate_assessment, score_assessment, SOFT_SKILLS_QUESTIONS, INTERVIEW_QUESTIONS
+from .services.problems import generate_problems_for_skills, get_problem_by_id, validate_solution
+from .services.ai_analysis import analyze_ai_replacement_risk, get_job_market_analysis
+from .services.models import AnalyzeRequest, AnalyzeResponse, AssessmentGenerateRequest, AssessmentSubmitRequest, AssessmentResultResponse, RoadmapRequest, RoadmapResponse, ResourcesRequest, ResourcesResponse
+
+app = FastAPI(title="Noesis API", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health")
+def health() -> dict:
+    return {"status": "ok"}
+
+
+@app.post("/analyze", response_model=AnalyzeResponse)
+async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
+    extracted = extract_skills_from_text(
+        text=request.resume_text or "",
+        user_known_skills=request.known_skills or [],
+    )
+    required = map_role_to_required_skills(request.goal)
+    gaps = detect_skill_gaps(known_skills=extracted, required_skills=required, role=request.goal)
+    return AnalyzeResponse(
+        extracted_skills=extracted,
+        required_skills=required,
+        skill_gaps=gaps,
+    )
+
+
+@app.post("/assessment/generate")
+async def assessment_generate(request: AssessmentGenerateRequest):
+    questions = generate_assessment(
+        skills=request.skills,
+        num_questions_per_skill=request.num_questions_per_skill or 3,
+    )
+    return {"questions": questions}
+
+
+@app.post("/assessment/submit", response_model=AssessmentResultResponse)
+async def assessment_submit(request: AssessmentSubmitRequest) -> AssessmentResultResponse:
+    result = score_assessment(request.responses)
+    return result
+
+
+@app.post("/resources", response_model=ResourcesResponse)
+async def resources(request: ResourcesRequest) -> ResourcesResponse:
+    ranked = rank_resources_for_skills(
+        missing_skills=request.missing_skills,
+        free_preferred=(request.free_preferred if request.free_preferred is not None else True),
+        weekly_time_hours=(request.weekly_time_hours if request.weekly_time_hours is not None else 5),
+        provider_preferences=request.provider_preferences or [],
+    )
+    return ResourcesResponse(resources=ranked)
+
+
+@app.post("/roadmap", response_model=RoadmapResponse)
+async def roadmap(request: RoadmapRequest) -> RoadmapResponse:
+    plan = generate_learning_roadmap(
+        goal=request.goal,
+        missing_skills=request.missing_skills,
+        weekly_time_hours=request.weekly_time_hours,
+        ranked_resources=request.ranked_resources,
+        weeks=request.weeks or 6,
+    )
+    return RoadmapResponse(learning_roadmap=plan)
+
+
+@app.post("/upload-pdf")
+async def upload_pdf(file: UploadFile = File(...)):
+    """Upload PDF file and convert to XML format for processing"""
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="File must be a PDF")
+    
+    try:
+        # Read PDF content
+        content = await file.read()
+        
+        # Convert PDF to text (simplified - in production use proper PDF parsing)
+        try:
+            from pypdf import PdfReader
+            import io
+            pdf_reader = PdfReader(io.BytesIO(content))
+            text_content = ""
+            for page in pdf_reader.pages:
+                text_content += page.extract_text() + "\n"
+        except Exception as e:
+            # Fallback to PyPDF2
+            try:
+                import PyPDF2
+                import io
+                pdf_reader = PyPDF2.PdfReader(io.BytesIO(content))
+                text_content = ""
+                for page in pdf_reader.pages:
+                    text_content += page.extract_text() + "\n"
+            except Exception:
+                raise HTTPException(status_code=400, detail=f"Could not read PDF: {str(e)}")
+        
+        # Convert text to XML format
+        filename = file.filename or "unknown.pdf"
+        xml_content = convert_text_to_xml(text_content, filename)
+        
+        return {
+            "filename": filename,
+            "xml_content": xml_content,
+            "text_content": text_content,
+            "message": "PDF successfully converted to XML format"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
+
+
+def convert_text_to_xml(text: str, filename: str) -> str:
+    """Convert extracted text to structured XML format"""
+    # Create XML structure
+    root = ET.Element("resume")
+    root.set("filename", filename)
+    
+    # Add metadata
+    metadata = ET.SubElement(root, "metadata")
+    ET.SubElement(metadata, "source").text = "PDF"
+    ET.SubElement(metadata, "filename").text = filename
+    
+    # Add content sections
+    content = ET.SubElement(root, "content")
+    
+    # Split text into sections (basic parsing)
+    sections = text.split('\n\n')
+    for i, section in enumerate(sections):
+        if section.strip():
+            section_elem = ET.SubElement(content, "section")
+            section_elem.set("id", f"section_{i}")
+            section_elem.text = section.strip()
+    
+    # Add skills section (extracted from text)
+    skills_section = ET.SubElement(root, "skills")
+    extracted_skills = extract_skills_from_text(text, [])
+    for skill in extracted_skills:
+        skill_elem = ET.SubElement(skills_section, "skill")
+        skill_elem.text = skill
+    
+    # Convert to string
+    return ET.tostring(root, encoding='unicode', method='xml')
+
+
+@app.post("/analyze-xml")
+async def analyze_xml(xml_content: str = Form(...), goal: str = Form(...), weekly_time_hours: int = Form(5)):
+    """Analyze skills from XML content"""
+    try:
+        # Parse XML
+        root = ET.fromstring(xml_content)
+        
+        # Extract text content
+        text_content = ""
+        for section in root.findall(".//section"):
+            if section.text:
+                text_content += section.text + "\n"
+        
+        # Extract skills from XML
+        skills_from_xml = []
+        for skill in root.findall(".//skill"):
+            if skill.text:
+                skills_from_xml.append(skill.text)
+        
+        # Use existing analysis logic
+        extracted = extract_skills_from_text(text_content, skills_from_xml)
+        required = map_role_to_required_skills(goal)
+        gaps = detect_skill_gaps(known_skills=extracted, required_skills=required)
+        
+        return {
+            "xml_parsed": True,
+            "extracted_skills": extracted,
+            "required_skills": required,
+            "skill_gaps": gaps,
+            "text_content": text_content[:500] + "..." if len(text_content) > 500 else text_content
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error parsing XML: {str(e)}")
+
+
+@app.post("/problems/generate")
+async def generate_problems(skills: List[str] = Form(...), role: str = Form("data_analyst"), difficulty: str = Form("intermediate")):
+    """Generate real-world problems that combine multiple skills"""
+    problems = generate_problems_for_skills(skills, role, difficulty)
+    return {"problems": problems}
+
+
+@app.get("/problems/{problem_id}")
+async def get_problem(problem_id: str):
+    """Get a specific problem by ID"""
+    problem = get_problem_by_id(problem_id)
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    return problem
+
+
+@app.post("/problems/{problem_id}/validate")
+async def validate_problem_solution(problem_id: str, solution_data: dict):
+    """Validate a solution to a problem"""
+    result = validate_solution(problem_id, solution_data)
+    return result
+
+
+@app.post("/ai-analysis")
+async def ai_replacement_analysis(role: str = Form(...), skills: List[str] = Form(...)):
+    """Analyze AI replacement risk for a role and skill set"""
+    analysis = analyze_ai_replacement_risk(role, skills)
+    return analysis
+
+
+@app.post("/job-market")
+async def job_market_analysis(role: str = Form(...), skills: List[str] = Form(...)):
+    """Analyze job market opportunities and likelihood"""
+    analysis = get_job_market_analysis(role, skills)
+    return analysis
+
+
+@app.post("/assessment/soft-skills")
+async def generate_soft_skills_assessment():
+    """Generate soft skills assessment questions"""
+    questions = []
+    for skill_type, skill_questions in SOFT_SKILLS_QUESTIONS.items():
+        for question in skill_questions:
+            questions.append({
+                "id": str(uuid.uuid4()),
+                "skill_type": skill_type,
+                "prompt": question["prompt"],
+                "options": question["options"],
+                "answer_index": question["answer_index"],
+                "points": question["points"],
+                "explanation": question["explanation"]
+            })
+    return {"questions": questions}
+
+
+@app.get("/interview-questions/{role}")
+async def get_interview_questions(role: str):
+    """Get interview questions for a specific role"""
+    role_questions = INTERVIEW_QUESTIONS.get(role.lower(), INTERVIEW_QUESTIONS["data_analyst"])
+    return role_questions
+
+
+@app.get("/roles")
+async def get_available_roles():
+    """Get list of available STEM roles"""
+    roles = [
+        {"name": "Data Analyst", "category": "Data Science", "growth_rate": 0.15},
+        {"name": "Software Engineer", "category": "Software Development", "growth_rate": 0.22},
+        {"name": "Machine Learning Engineer", "category": "AI/ML", "growth_rate": 0.35},
+        {"name": "Cybersecurity Analyst", "category": "Security", "growth_rate": 0.28},
+        {"name": "Biomedical Engineer", "category": "Healthcare Technology", "growth_rate": 0.12},
+        {"name": "Environmental Engineer", "category": "Sustainability", "growth_rate": 0.18}
+    ]
+    return {"roles": roles}
+
+
