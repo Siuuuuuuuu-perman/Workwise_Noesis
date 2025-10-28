@@ -15,6 +15,7 @@ from .services.roadmap import generate_learning_roadmap
 from .services.assessment import generate_assessment, score_assessment, SOFT_SKILLS_QUESTIONS, INTERVIEW_QUESTIONS
 from .services.problems import generate_problems_for_skills, get_problem_by_id, validate_solution
 from .services.ai_analysis import analyze_ai_replacement_risk, get_job_market_analysis
+from .services.reflection_agent import get_reflection_agent, ReflectionReport, ReflectionInsight, LearningProgress
 from .services.models import AnalyzeRequest, AnalyzeResponse, AssessmentGenerateRequest, AssessmentSubmitRequest, AssessmentResultResponse, RoadmapRequest, RoadmapResponse, ResourcesRequest, ResourcesResponse
 
 # Production configuration
@@ -298,3 +299,139 @@ async def get_available_roles():
         {"name": "Environmental Engineer", "category": "Sustainability", "growth_rate": 0.18}
     ]
     return {"roles": roles}
+
+
+# =============================================================================
+# REFLECTION AGENT ENDPOINTS - AI-Powered Learning Reflection
+# =============================================================================
+
+@app.post("/reflection/generate")
+async def generate_reflection_report(user_data: dict):
+    """Generate comprehensive reflection report using NVIDIA AI"""
+    try:
+        user_id = user_data.get("user_id", "anonymous")
+        reflection_agent = get_reflection_agent()
+        
+        report = reflection_agent.create_reflection_report(user_id, user_data)
+        
+        # Convert to JSON-serializable format
+        report_dict = {
+            "user_id": report.user_id,
+            "generated_at": report.generated_at.isoformat(),
+            "overall_progress_score": report.overall_progress_score,
+            "key_insights": [
+                {
+                    "category": insight.category,
+                    "title": insight.title,
+                    "description": insight.description,
+                    "confidence": insight.confidence,
+                    "actionable": insight.actionable,
+                    "priority": insight.priority,
+                    "suggested_actions": insight.suggested_actions
+                }
+                for insight in report.key_insights
+            ],
+            "learning_progress": [
+                {
+                    "skill": progress.skill,
+                    "current_level": progress.current_level,
+                    "target_level": progress.target_level,
+                    "progress_percentage": progress.progress_percentage,
+                    "time_invested_hours": progress.time_invested_hours,
+                    "last_practice_date": progress.last_practice_date.isoformat() if progress.last_practice_date else None,
+                    "confidence_score": progress.confidence_score
+                }
+                for progress in report.learning_progress
+            ],
+            "recommendations": report.recommendations,
+            "next_milestones": report.next_milestones,
+            "motivational_message": report.motivational_message
+        }
+        
+        return report_dict
+        
+    except Exception as e:
+        print(f"Error generating reflection report: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate reflection report: {str(e)}")
+
+
+@app.post("/reflection/insights")
+async def get_learning_insights(user_data: dict):
+    """Get AI-powered learning insights"""
+    try:
+        reflection_agent = get_reflection_agent()
+        insights = reflection_agent.analyze_learning_patterns(user_data)
+        
+        insights_dict = [
+            {
+                "category": insight.category,
+                "title": insight.title,
+                "description": insight.description,
+                "confidence": insight.confidence,
+                "actionable": insight.actionable,
+                "priority": insight.priority,
+                "suggested_actions": insight.suggested_actions
+            }
+            for insight in insights
+        ]
+        
+        return {"insights": insights_dict}
+        
+    except Exception as e:
+        print(f"Error generating insights: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate insights: {str(e)}")
+
+
+@app.post("/reflection/progress")
+async def analyze_learning_progress(learning_data: List[dict]):
+    """Analyze detailed learning progress"""
+    try:
+        reflection_agent = get_reflection_agent()
+        progress_analysis = reflection_agent.generate_progress_analysis(learning_data)
+        
+        progress_dict = [
+            {
+                "skill": progress.skill,
+                "current_level": progress.current_level,
+                "target_level": progress.target_level,
+                "progress_percentage": progress.progress_percentage,
+                "time_invested_hours": progress.time_invested_hours,
+                "last_practice_date": progress.last_practice_date.isoformat() if progress.last_practice_date else None,
+                "confidence_score": progress.confidence_score
+            }
+            for progress in progress_analysis
+        ]
+        
+        return {"progress_analysis": progress_dict}
+        
+    except Exception as e:
+        print(f"Error analyzing progress: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to analyze progress: {str(e)}")
+
+
+@app.get("/reflection/status")
+async def reflection_agent_status():
+    """Check reflection agent status and capabilities"""
+    try:
+        reflection_agent = get_reflection_agent()
+        return {
+            "status": "active",
+            "model": reflection_agent.model,
+            "capabilities": [
+                "Learning pattern analysis",
+                "Progress tracking",
+                "SWOT analysis",
+                "Personalized recommendations",
+                "Motivational guidance",
+                "Milestone planning"
+            ],
+            "ai_powered": True,
+            "fallback_mode": True
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "ai_powered": False,
+            "fallback_mode": True
+        }
