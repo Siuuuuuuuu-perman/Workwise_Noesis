@@ -1,0 +1,13 @@
+{
+  "name": "workwise-noesis-frontend",
+  "version": "1.0.0",
+  "description": "WorkWise Noesis Frontend - AI-Powered Career & Learning Copilot",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'",
+    "start": "echo 'Static site - no start needed'"
+  },
+  "keywords": ["career", "learning", "ai", "resume", "skills"],
+  "author": "WorkWise Noesis Team",
+  "license": "MIT"
+}
