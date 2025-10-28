@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend/app/main_production.py",
+      "src": "backend/app/main_lightweight.py",
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "50mb"
@@ -12,7 +12,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "backend/app/main_production.py"
+      "dest": "backend/app/main_lightweight.py"
     },
     {
       "src": "/(.*)",
