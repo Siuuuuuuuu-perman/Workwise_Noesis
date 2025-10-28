@@ -16,6 +16,7 @@ from .services.assessment import generate_assessment, score_assessment, SOFT_SKI
 from .services.problems import generate_problems_for_skills, get_problem_by_id, validate_solution
 from .services.ai_analysis import analyze_ai_replacement_risk, get_job_market_analysis
 from .services.reflection_agent import get_reflection_agent, ReflectionReport, ReflectionInsight, LearningProgress
+from .services.course_recommendations import get_course_service, CourseRecommendation, Course
 from .services.models import AnalyzeRequest, AnalyzeResponse, AssessmentGenerateRequest, AssessmentSubmitRequest, AssessmentResultResponse, RoadmapRequest, RoadmapResponse, ResourcesRequest, ResourcesResponse
 
 # Production configuration
@@ -424,6 +425,173 @@ async def reflection_agent_status():
                 "Personalized recommendations",
                 "Motivational guidance",
                 "Milestone planning"
+            ],
+            "ai_powered": True,
+            "fallback_mode": True
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "ai_powered": False,
+            "fallback_mode": True
+        }
+
+
+# =============================================================================
+# COURSE RECOMMENDATION ENDPOINTS - AI-Powered Learning Platform Integration
+# =============================================================================
+
+@app.post("/courses/recommend")
+async def get_course_recommendations(user_profile: dict):
+    """Get AI-powered course recommendations from multiple learning platforms"""
+    try:
+        course_service = get_course_service()
+        recommendations = course_service.get_ai_course_recommendations(user_profile)
+        
+        recommendations_dict = [
+            {
+                "position": rec.learning_path_position,
+                "platform": rec.course.platform,
+                "title": rec.course.title,
+                "description": rec.course.description,
+                "instructor": rec.course.instructor,
+                "duration_hours": rec.course.duration_hours,
+                "difficulty_level": rec.course.difficulty_level,
+                "rating": rec.course.rating,
+                "price": rec.course.price,
+                "currency": rec.course.currency,
+                "url": rec.course.url,
+                "skills_covered": rec.course.skills_covered,
+                "prerequisites": rec.course.prerequisites,
+                "completion_certificate": rec.course.completion_certificate,
+                "language": rec.course.language,
+                "enrollment_count": rec.course.enrollment_count,
+                "match_score": rec.match_score,
+                "reasoning": rec.reasoning,
+                "priority": rec.priority,
+                "estimated_completion_time_days": rec.estimated_completion_time
+            }
+            for rec in recommendations
+        ]
+        
+        return {"recommendations": recommendations_dict}
+        
+    except Exception as e:
+        print(f"Error generating course recommendations: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate course recommendations: {str(e)}")
+
+
+@app.post("/courses/learning-path")
+async def create_learning_path(user_profile: dict):
+    """Create a comprehensive learning path with course recommendations"""
+    try:
+        course_service = get_course_service()
+        learning_path = course_service.create_learning_path(user_profile)
+        
+        return learning_path
+        
+    except Exception as e:
+        print(f"Error creating learning path: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create learning path: {str(e)}")
+
+
+@app.get("/courses/platforms")
+async def get_supported_platforms():
+    """Get list of supported learning platforms"""
+    try:
+        course_service = get_course_service()
+        platforms = list(course_service.platforms.keys())
+        
+        platform_info = {
+            "coursera": {
+                "name": "Coursera",
+                "description": "University-level courses and specializations",
+                "features": ["Certificates", "University Partners", "Specializations"],
+                "price_range": "Free - $100+",
+                "focus": "Academic and Professional Development"
+            },
+            "khan_academy": {
+                "name": "Khan Academy",
+                "description": "Free educational content for all ages",
+                "features": ["Free", "Self-paced", "Comprehensive"],
+                "price_range": "Free",
+                "focus": "K-12 and College Prep"
+            },
+            "udemy": {
+                "name": "Udemy",
+                "description": "Online courses for practical skills",
+                "features": ["Practical Skills", "Lifetime Access", "Instructor-led"],
+                "price_range": "$10 - $200",
+                "focus": "Professional and Technical Skills"
+            },
+            "edx": {
+                "name": "edX",
+                "description": "University courses and microcredentials",
+                "features": ["University Partners", "Microcredentials", "Research-based"],
+                "price_range": "Free - $300+",
+                "focus": "Higher Education and Research"
+            },
+            "linkedin_learning": {
+                "name": "LinkedIn Learning",
+                "description": "Professional development courses",
+                "features": ["Professional Focus", "LinkedIn Integration", "Business Skills"],
+                "price_range": "$30 - $50/month",
+                "focus": "Career and Business Development"
+            }
+        }
+        
+        return {
+            "supported_platforms": platforms,
+            "platform_details": platform_info
+        }
+        
+    except Exception as e:
+        print(f"Error getting platform info: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get platform info: {str(e)}")
+
+
+@app.post("/courses/search")
+async def search_courses(search_params: dict):
+    """Search for courses on specific platforms"""
+    try:
+        course_service = get_course_service()
+        
+        platform = search_params.get("platform", "coursera")
+        skill = search_params.get("skill", "Python")
+        difficulty = search_params.get("difficulty", "Beginner")
+        
+        courses = course_service.search_courses_on_platform(platform, skill, difficulty)
+        
+        return {
+            "platform": platform,
+            "skill": skill,
+            "difficulty": difficulty,
+            "courses_found": len(courses),
+            "courses": courses
+        }
+        
+    except Exception as e:
+        print(f"Error searching courses: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to search courses: {str(e)}")
+
+
+@app.get("/courses/status")
+async def course_service_status():
+    """Check course recommendation service status"""
+    try:
+        course_service = get_course_service()
+        return {
+            "status": "active",
+            "model": course_service.model,
+            "supported_platforms": list(course_service.platforms.keys()),
+            "capabilities": [
+                "AI-powered course recommendations",
+                "Multi-platform integration",
+                "Personalized learning paths",
+                "Skill-based matching",
+                "Budget-aware suggestions",
+                "Learning style adaptation"
             ],
             "ai_powered": True,
             "fallback_mode": True
