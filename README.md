@@ -194,5 +194,40 @@ To test the application:
 ## 🏆 Credits
 Built for **Agents for Impact @ Howard University** - combining workforce transition focus with adaptive learning-gap analysis. This project demonstrates the potential of AI-driven career guidance and personalized learning pathways.
 
+## 🚀 Vercel Deployment
+
+**Ready for Production Deployment!**
+
+This project is fully configured for Vercel deployment with the following improvements:
+
+### ✅ **Production-Ready Features:**
+- **Secure CORS**: Environment-based origin restrictions
+- **Error Handling**: Global exception handler with sanitized error messages
+- **File Upload Limits**: Configurable file size validation
+- **React Frontend**: Vercel-compatible frontend (replaces Streamlit)
+- **Environment Configuration**: Production vs development settings
+
+### 📁 **New Files for Deployment:**
+- `vercel.json` - Vercel configuration
+- `backend/app/main_production.py` - Production FastAPI app
+- `frontend/index.html` - React-based frontend
+- `requirements-vercel.txt` - Vercel-specific dependencies
+- `DEPLOYMENT.md` - Comprehensive deployment guide
+
+### 🚀 **Quick Deploy:**
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy from project root
+vercel
+
+# Set environment variables in Vercel dashboard
+ENVIRONMENT=production
+CORS_ORIGINS=https://your-domain.vercel.app
+```
+
+**See `DEPLOYMENT.md` for complete deployment instructions and troubleshooting.**
+
 ## 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.

@@ -1,5 +1,7 @@
+import os
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
 import xml.etree.ElementTree as ET
@@ -15,21 +17,42 @@ from .services.problems import generate_problems_for_skills, get_problem_by_id, 
 from .services.ai_analysis import analyze_ai_replacement_risk, get_job_market_analysis
 from .services.models import AnalyzeRequest, AnalyzeResponse, AssessmentGenerateRequest, AssessmentSubmitRequest, AssessmentResultResponse, RoadmapRequest, RoadmapResponse, ResourcesRequest, ResourcesResponse
 
-app = FastAPI(title="Noesis API", version="0.1.0")
+# Production configuration
+app = FastAPI(
+    title="Noesis API", 
+    version="0.1.0",
+    docs_url="/docs" if os.getenv("ENVIRONMENT") != "production" else None,
+    redoc_url="/redoc" if os.getenv("ENVIRONMENT") != "production" else None
+)
+
+# Production CORS configuration
+allowed_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8501").split(",")
+if os.getenv("ENVIRONMENT") == "production":
+    allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8501", "https://*.vercel.app"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
+# Global exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "error": str(exc) if os.getenv("ENVIRONMENT") != "production" else "Something went wrong"}
+    )
+
+@app.get("/")
+def root():
+    return {"message": "Noesis API is running", "version": "0.1.0"}
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
-
+    return {"status": "ok", "environment": os.getenv("ENVIRONMENT", "development")}
 
 @app.post("/analyze", response_model=AnalyzeResponse)
 async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
@@ -90,10 +113,13 @@ async def upload_pdf(file: UploadFile = File(...)):
     if not file.filename or not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="File must be a PDF")
     
+    # Check file size limit
+    max_size = int(os.getenv("MAX_FILE_SIZE_MB", "10")) * 1024 * 1024  # 10MB default
+    content = await file.read()
+    if len(content) > max_size:
+        raise HTTPException(status_code=400, detail=f"File too large. Maximum size: {max_size // (1024*1024)}MB")
+    
     try:
-        # Read PDF content
-        content = await file.read()
-        
         # Convert PDF to text (simplified - in production use proper PDF parsing)
         try:
             from pypdf import PdfReader
@@ -272,5 +298,3 @@ async def get_available_roles():
         {"name": "Environmental Engineer", "category": "Sustainability", "growth_rate": 0.18}
     ]
     return {"roles": roles}
-
-
