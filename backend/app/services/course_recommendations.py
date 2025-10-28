@@ -331,16 +331,25 @@ class CourseRecommendationService:
         """Fallback recommendations when AI fails"""
         fallback_courses = []
         
-        # Get skill gaps
+        # Get skill gaps - handle both dict and string formats
         skill_gaps = user_profile.get('skill_gaps', [])
-        if not skill_gaps:
-            skill_gaps = ['Python', 'Data Analysis', 'Machine Learning']
+        skills = []
+        
+        if skill_gaps:
+            for gap in skill_gaps:
+                if isinstance(gap, dict):
+                    skills.append(gap.get('skill', 'Unknown'))
+                else:
+                    skills.append(str(gap))
+        else:
+            skills = ['Python', 'Data Analysis', 'Machine Learning']
         
         # Create fallback recommendations
-        for i, skill in enumerate(skill_gaps[:3]):  # Top 3 skills
+        for i, skill in enumerate(skills[:3]):  # Top 3 skills
+            skill_name = str(skill).lower().replace(' ', '_')
             course = Course(
                 platform="coursera",
-                course_id=f"fallback_{skill.lower()}_course",
+                course_id=f"fallback_{skill_name}_course",
                 title=f"{skill} Fundamentals",
                 description=f"Learn {skill} fundamentals with hands-on projects",
                 instructor="Expert Instructor",
@@ -349,7 +358,7 @@ class CourseRecommendationService:
                 rating=4.5,
                 price=49.0,
                 currency="USD",
-                url=f"https://coursera.org/learn/{skill.lower()}-fundamentals",
+                url=f"https://coursera.org/learn/{skill_name}-fundamentals",
                 skills_covered=[skill],
                 prerequisites=[],
                 completion_certificate=True,
