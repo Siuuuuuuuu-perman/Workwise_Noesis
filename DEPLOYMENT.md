@@ -1,3 +1,19 @@
+          super().run_command(command)
+        File "/tmp/pip-build-env-ng6x4gb7/overlay/lib/python3.12/site-packages/setuptools/_distutils/dist.py", line 1021, in run_command
+          cmd_obj.run()
+        File "<string>", line 172, in run
+        File "<string>", line 71, in _install_nvidia_pypi_index
+        File "/tmp/pip-install-eanzb9q0/nvidia-pyindex_fb5ae5f2182a4ab985719d5cb71f0331/nvidia_pyindex/utils.py", line 24, in get_configuration_files
+          raise RuntimeError(output) from e
+      RuntimeError: Traceback (most recent call last):
+        File "<string>", line 1, in <module>
+      ModuleNotFoundError: No module named 'pip'
+      
+      [end of output]
+  
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+  ERROR: Failed building wheel for nvidia-pyindex
+ERROR: Could not build wheels for nvidia-pyindex, which is required to install pyproject.toml-based projects
 # 🚀 Vercel Deployment Guide for WorkWise Noesis
 
 ## 📋 Pre-Deployment Checklist

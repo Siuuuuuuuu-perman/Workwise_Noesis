@@ -33,5 +33,7 @@ chardet==5.2.0
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 
-# Note: NVIDIA packages removed for Vercel deployment
-# The app will use graceful fallback when NVIDIA API is not available
+# NVIDIA AI Integration
+nvidia-ml-py==11.525.84
+nvidia-pyindex==1.0.9
+
