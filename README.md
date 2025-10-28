@@ -1,31 +1,38 @@
 # WorkWise Noesis - Enhanced AI Learning Gap Solution
 
-An AI-powered personal learning assistant that identifies skill gaps and generates dynamic, personalized learning roadmaps. This MVP includes a complete FastAPI backend and Streamlit frontend with assessment-based skill refinement.
+An AI-powered personal learning assistant that identifies skill gaps and generates dynamic, personalized learning roadmaps. This comprehensive platform combines workforce transition focus with adaptive learning-gap analysis to help users bridge the gap between their current skills and career aspirations.
 
-## 🚀 What's Built (MVP)
+## 🚀 What's Built
 
 **Complete End-to-End Platform:**
 - **Backend API**: FastAPI with skill extraction, gap analysis, assessment, resource ranking, and roadmap generation
-- **Frontend UI**: Streamlit app with file upload, interactive assessment, and dashboard
+- **Frontend UI**: Streamlit app with file upload, interactive assessment, and comprehensive dashboard
 - **Assessment Flow**: Initial knowledge testing to refine skill levels before roadmap generation
-- **File Support**: PDF and TXT resume upload with text extraction
+- **File Support**: PDF and TXT resume upload with text extraction and XML conversion
+- **AI Analysis**: Automation risk assessment and job market analysis
+- **Gamification**: Mastery points system and real-world problem solving
+- **Interview Prep**: Technical questions and soft skills assessment
 
 ## 📁 Project Structure
 
 ```
 WorkWise-Noesis/
 ├── backend/app/                 # FastAPI backend
-│   ├── main.py                  # API endpoints
+│   ├── main.py                  # API endpoints and file upload handling
 │   └── services/                # Core business logic
-│       ├── skills.py           # Skill extraction
-│       ├── gaps.py             # Gap detection
-│       ├── assessment.py       # Knowledge testing
-│       ├── resources.py        # Resource ranking
-│       └── roadmap.py          # Learning plan generation
+│       ├── skills.py           # Skill extraction from text/resumes
+│       ├── gaps.py             # Gap detection and role mapping
+│       ├── assessment.py       # Knowledge testing and scoring
+│       ├── resources.py        # Resource ranking and recommendations
+│       ├── roadmap.py          # Learning plan generation
+│       ├── problems.py         # Real-world problem generation
+│       ├── ai_analysis.py      # AI replacement risk analysis
+│       └── models.py           # Pydantic data models
 ├── frontend/
-│   └── streamlit_app.py        # UI application
-├── requirements.txt             # Dependencies
+│   └── streamlit_app.py        # Comprehensive UI application
+├── requirements.txt             # All dependencies
 ├── .env                        # Environment variables
+├── env.example                 # Environment template
 └── README.md                   # This file
 ```
 
@@ -69,7 +76,10 @@ streamlit run frontend/streamlit_app.py
 3. **Analyze Skills**: Extract known skills and detect gaps
 4. **Take Assessment**: Knowledge test to refine skill levels
 5. **Get Resources**: Ranked learning recommendations
-6. **Generate Roadmap**: Week-by-week learning plan
+6. **Generate Roadmap**: Week-by-week learning plan with mastery points
+7. **Practice Problems**: Real-world scenarios to test skills
+8. **AI Analysis**: Assess automation risk and job market opportunities
+9. **Interview Prep**: Technical questions and soft skills assessment
 
 ## 🔌 API Endpoints
 
@@ -77,10 +87,20 @@ streamlit run frontend/streamlit_app.py
 |----------|--------|-------------|
 | `/health` | GET | Health check |
 | `/analyze` | POST | Extract skills, detect gaps |
+| `/upload-pdf` | POST | Upload and convert PDF to XML |
+| `/analyze-xml` | POST | Analyze skills from XML content |
 | `/assessment/generate` | POST | Create knowledge test |
 | `/assessment/submit` | POST | Score test, update skills |
+| `/assessment/soft-skills` | POST | Generate soft skills assessment |
 | `/resources` | POST | Rank learning resources |
 | `/roadmap` | POST | Generate learning plan |
+| `/problems/generate` | POST | Generate real-world problems |
+| `/problems/{id}` | GET | Get specific problem |
+| `/problems/{id}/validate` | POST | Validate problem solution |
+| `/ai-analysis` | POST | Analyze AI replacement risk |
+| `/job-market` | POST | Analyze job market opportunities |
+| `/interview-questions/{role}` | GET | Get interview questions for role |
+| `/roles` | GET | Get available STEM roles |
 
 ## 🔧 Environment Variables
 
@@ -101,25 +121,78 @@ cp env.example .env
 
 ## 🎯 Current Implementation
 
-**MVP Features (Working Now):**
-- ✅ Rule-based skill extraction from text
-- ✅ Role-to-skills mapping (Data Analyst, Health Data Analyst)
-- ✅ Gap detection (Known/Missing/Partial)
-- ✅ Knowledge assessment with scoring
-- ✅ Resource ranking with mock data
-- ✅ Roadmap generation with weekly planning
-- ✅ File upload (PDF/TXT) with text extraction
-- ✅ Interactive Streamlit UI
+**Core Features (Fully Working):**
+- ✅ Rule-based skill extraction from text and resumes
+- ✅ Role-to-skills mapping (Data Analyst, Software Engineer, ML Engineer, etc.)
+- ✅ Gap detection with proficiency levels (Known/Missing/Partial)
+- ✅ Knowledge assessment with scoring and skill updates
+- ✅ Resource ranking with mock data and preferences
+- ✅ Roadmap generation with weekly planning and mastery points
+- ✅ PDF/TXT file upload with XML conversion
+- ✅ Interactive Streamlit UI with comprehensive dashboard
+- ✅ Real-world problem generation and validation
+- ✅ AI replacement risk analysis with research citations
+- ✅ Job market analysis with growth rates and salary data
+- ✅ Interview preparation with technical and soft skills questions
+- ✅ Gamification with mastery points and progress tracking
 
-**Integration Targets (Future):**
+**Advanced Features:**
+- ✅ XML-based resume processing
+- ✅ Multi-role support (STEM-focused)
+- ✅ Comprehensive assessment system
+- ✅ Problem-solving scenarios
+- ✅ Market analysis and risk assessment
+- ✅ Interview preparation tools
+
+**Future Integration Targets:**
 - 🔄 Replace rule-based extraction with NVIDIA Nemotron (via NIM)
 - 🔄 Use O*NET taxonomy for role skill mapping
 - 🔄 Connect to real course APIs (Coursera, edX, Udemy, Khan Academy)
 - 🔄 Implement adaptive assessment algorithms
-- 🔄 Add job market analysis and automation risk scoring
+- 🔄 Add persistent user progress tracking
 
-## Ethics & privacy
-- Transparent reasoning snippets, user control of data, optional redaction, HTTPS-only in production.
+## 🧪 Testing
 
-## Credits
-Combines ideas from WorkWise AI and Noesis drafts; built for Agents for Impact @ Howard University.
+To test the application:
+
+1. **Backend Testing:**
+   ```bash
+   # Start the backend
+   uvicorn backend.app.main:app --reload --port 8000
+   
+   # Test health endpoint
+   curl http://localhost:8000/health
+   
+   # Test skill analysis
+   curl -X POST "http://localhost:8000/analyze" \
+        -H "Content-Type: application/json" \
+        -d '{"goal": "Data Analyst", "known_skills": ["Python"], "resume_text": "I have experience with data analysis"}'
+   ```
+
+2. **Frontend Testing:**
+   ```bash
+   # Start the frontend
+   streamlit run frontend/streamlit_app.py
+   
+   # Navigate to http://localhost:8501
+   # Test all features: upload, analyze, assess, roadmap, problems, AI analysis
+   ```
+
+3. **Integration Testing:**
+   - Upload a PDF resume and verify XML conversion
+   - Complete the full workflow: analyze → assess → resources → roadmap
+   - Test problem generation and validation
+   - Verify AI analysis and job market features
+
+## 🔒 Security & Privacy
+- Transparent reasoning snippets with user control of data
+- Optional PII redaction capabilities
+- HTTPS-only in production environments
+- Secure file upload handling with validation
+- Environment-based configuration management
+
+## 🏆 Credits
+Built for **Agents for Impact @ Howard University** - combining workforce transition focus with adaptive learning-gap analysis. This project demonstrates the potential of AI-driven career guidance and personalized learning pathways.
+
+## 📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.

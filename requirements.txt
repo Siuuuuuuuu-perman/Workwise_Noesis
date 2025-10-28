@@ -21,11 +21,15 @@ PyPDF2==3.0.1
 # Environment management
 python-dotenv==1.0.0
 
-# Optional: Database support
+# Database support
 sqlalchemy==2.0.25
 alembic==1.13.1
 
-# Optional: Enhanced file processing
+# Enhanced file processing
 python-magic==0.4.27
 chardet==5.2.0
+
+# Additional dependencies for production
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
 
